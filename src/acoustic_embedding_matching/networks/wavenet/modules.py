@@ -16,11 +16,12 @@ class DilatedConditionalConv1d(nn.Module):
             in_channels=cond_channels,
             out_channels=out_channels,
             kernel_size=1,
+            padding=0,
         )
         self.dilated_conv = nn.Conv1d(
             in_channels, out_channels,
             kernel_size=kernel_size, dilation=dilation,
-            stride=1, padding=0, bias=False
+            stride=1, padding="same", bias=False
         )
 
     def forward(self, x: torch.Tensor, condition: torch.Tensor) -> torch.Tensor:
@@ -33,8 +34,9 @@ class DilatedConditionalConv1d(nn.Module):
         Returns:
             Conditional convolution output.
         """
-        condition.unsqueeze_(-1)
+        condition = condition.unsqueeze(-1)
         condition = self.conditional_conv(condition)
+
         condition = torch.tile(condition, (1, 1, x.size(2)))
         return self.dilated_conv(x) + condition
 
@@ -45,16 +47,18 @@ class CausalConv1d(nn.Module):
             in_channels: int,
             out_channels: int,
             kernel_size: int = 2,
-            padding: int = 1,
+            front_padding: int = 0,
     ) -> None:
         super().__init__()
+        self.front_padding = front_padding
         self.conv = nn.Conv1d(in_channels, out_channels,
-                              kernel_size=kernel_size, padding=padding,
+                              kernel_size=kernel_size,
                               stride=1, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.nn.functional.pad(x, (self.front_padding, 0), value=0)
         x = self.conv(x)
-        return x[:, :, :-1]
+        return x
 
 
 class WaveNetBlock(nn.Module):
@@ -70,7 +74,7 @@ class WaveNetBlock(nn.Module):
 
         self.filter_conv = DilatedConditionalConv1d(
             in_channels=hidden_channels,
-            out_channels=output_channels,
+            out_channels=hidden_channels,
             cond_channels=cond_channels,
             dilation=dilation,
             kernel_size=kernel_size,
@@ -84,7 +88,7 @@ class WaveNetBlock(nn.Module):
         )
         self.skip_conv = nn.Conv1d(
             in_channels=hidden_channels,
-            out_channels=output_channels,
+            out_channels=hidden_channels,
             kernel_size=1,
             bias=False,
         )
@@ -103,4 +107,3 @@ class WaveNetBlock(nn.Module):
         residual = self.res_conv(x) + x
         skip = self.skip_conv(x)
         return residual, skip
-

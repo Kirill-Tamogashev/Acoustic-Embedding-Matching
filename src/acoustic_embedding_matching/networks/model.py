@@ -63,12 +63,10 @@ class AcousticEmbeddingMatching(nn.Module):
         """
 
         source_embed = self.embedding_network(self.to_spectrogram(source))
-        print(f"source_embed: {source_embed.shape}")
         target_embed = self.embedding_network(self.to_spectrogram(target))
-        print(f"target_embed: {target_embed.shape}")
 
         hidden = self.source_wavenet(source.unsqueeze(1), source_embed)
         hidden = self.bottleneck(hidden)
         prediction = self.target_wavenet(hidden, target_embed)
 
-        return prediction
+        return prediction.squeeze(1)

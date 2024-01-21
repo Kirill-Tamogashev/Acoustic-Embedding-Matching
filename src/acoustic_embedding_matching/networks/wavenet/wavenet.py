@@ -14,7 +14,7 @@ class WaveNet(nn.Module):
             num_layers: int = 10
     ):
         super().__init__()
-
+        self.hidden_channels = hidden_channels
         self.causal_convolution = CausalConv1d(
             in_channels=input_channels,
             out_channels=hidden_channels,
@@ -45,11 +45,11 @@ class WaveNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor, condition: torch.Tensor) -> torch.Tensor:
+        out = torch.zeros(x.size(0), self.hidden_channels, x.size(-1), device=x.device)
         x = self.causal_convolution(x)
 
-        out = torch.as_tensor(0)
         residual = x
-        for layer in self.layer_list:
+        for idx, layer in enumerate(self.layer_list):
             residual, skip = layer(residual, condition)
             out += skip
 
