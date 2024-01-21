@@ -1,0 +1,10 @@
+[project]
+name = "acoustic_embedding_matching"
+version = "0.0.1.beta"
+authors = [
+    { name="Kirill Tamogashev", email="k.tamogashev@samsung.com" },
+]
+description = """
+This package implements Acoustic Embedding Matching paper
+"""
+readme = "README.md"
