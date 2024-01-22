@@ -16,7 +16,8 @@ class EmbeddingNetworkTrainer(BaseTrainer, ABC):
             val_loader: torch.data.DataLoader,
             criterion: torch.nn.Module,
             num_epochs: int = 100,
-            iter_log_freq: int = 10_000,
+            log_data_freq: int = 100_000,
+            log_loss_freq: int = 1_000,
             max_train_iterations: int = int("inf")
     ):
         super().__init__(
@@ -26,14 +27,38 @@ class EmbeddingNetworkTrainer(BaseTrainer, ABC):
             train_loader=train_loader,
             val_loader=val_loader,
             num_epochs=num_epochs,
-            iter_log_freq=iter_log_freq,
+            log_data_freq=log_data_freq,
+            log_loss_freq=log_loss_freq,
             max_train_iterations=max_train_iterations,
         )
         self.criterion = criterion
 
     def train_step(self, batch, epoch, iteration):
-        source, condition, target = batch
-        prediction = self.model(source, condition)
-        loss = self.criterion(prediction, target)
-        return loss, _
+        inputs, plus_sample, minus_sample = batch
+
+        embedding = self.model(inputs)
+        plus_embedding = self.model(plus_sample)
+        minus_embedding = self.model(minus_sample)
+
+        loss = self.criterion(embedding, plus_embedding, minus_embedding)
+        return loss, []
+
+    def val_step(self, batch, epoch, iteration):
+        inputs, plus_sample, minus_sample = batch
+
+        self.model.eval()
+        embedding = self.model(inputs)
+        plus_embedding = self.model(plus_sample)
+        minus_embedding = self.model(minus_sample)
+        self.model.train()
+
+        loss = self.criterion(embedding, plus_embedding, minus_embedding)
+        return loss, []
+
+    def val_log(self, logger, log_data, epoch, iteration):
+        pass
+
+    def train_log(self, logger, log_data, epoch, iteration):
+        pass
+
 

@@ -25,7 +25,7 @@ class AcousticEmbeddingMatching(nn.Module):
     ) -> None:
         super().__init__()
         self.stft_kwargs = stft_kwargs if stft_kwargs is not None else {
-            "n_fft": 1024, "win_length": 1024, "hop_length": 512,  # "return_complex": True
+            "n_fft": 1024, "win_length": 1024, "hop_length": 512
         }
         self.to_spectrogram = Spectrogram(**self.stft_kwargs)
         self.source_wavenet = WaveNet(
@@ -70,3 +70,10 @@ class AcousticEmbeddingMatching(nn.Module):
         prediction = self.target_wavenet(hidden, target_embed)
 
         return prediction.squeeze(1)
+
+    @torch.no_grad()
+    def inference(self, source: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        self.eval()
+        prediction = self(source, target)
+        return prediction
+
