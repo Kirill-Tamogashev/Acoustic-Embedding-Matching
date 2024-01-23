@@ -19,16 +19,31 @@ def split_audio(audio: torch.Tensor, max_length: int) -> tuple[torch.Tensor, tor
     return audio[:length // 2], audio[length // 2:]
 
 
-def drr_augmentation(audio: torch.Tensor, sample_rate: int, drr: float,  t_0: float = 2.5) -> torch.Tensor:
-    t_d = audio.abs().max(dim=-1).item()
+def drr_augmentation(ir: torch.Tensor, sample_rate: int, drr: float,  t_0: float = 2.5) -> torch.Tensor:
+    """
+        Augment DRR of the given ir.
+
+        This function changes DRR of the given Impulse Response (IR)
+        following the method, described in `https://arxiv.org/pdf/1909.03642.pdf`
+
+    Args:
+        ir: [IR_Length] - input IR
+        sample_rate: sample rate
+        drr: desired DRR value
+        t_0: tolerance window
+
+    Returns:
+        augmented IR
+    """
+    t_d = ir.abs().max(dim=-1).item()
     t_0 = sample_rate * 1e-3 * t_0
-    mask = torch.zeros_like(audio)
+    mask = torch.zeros_like(ir)
     mask[int(t_d - t_0): int(t_d + t_0)] = 1
 
-    h_e = audio * mask
-    h_l = audio * (1 - mask)
+    h_e = ir * mask
+    h_l = ir * (1 - mask)
 
-    w = torch.hann_window(audio.size(-1))
+    w = torch.hann_window(ir.size(-1))
 
     a = torch.sum((w * h_e) ** 2)
     b = 2 * torch.sum(w * (1 - w) * h_e ** 2)
