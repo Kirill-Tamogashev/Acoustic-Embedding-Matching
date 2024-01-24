@@ -1,0 +1,2 @@
+from .train_acoustic_matching import AcousticMatchingTrainer
+from .train_embedding_network import EmbeddingNetworkTrainer
